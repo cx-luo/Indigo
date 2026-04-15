@@ -1641,16 +1641,14 @@ CEXPORT int indigoCreateSGroup(const char* type, int mapping, const char* name)
                 }
             }
 
+            sgroup.subscript.appendString(name, true);
+
             if (sgroup.sgroup_type == SGroup::SG_TYPE_SUP)
             {
-                Superatom& sa = (Superatom&)sgroup;
-                sa.subscript.appendString(name, true);
                 return self.addObject(new IndigoSuperatom(mol, idx));
             }
             else if (sgroup.sgroup_type == SGroup::SG_TYPE_SRU)
             {
-                RepeatingUnit& ru = (RepeatingUnit&)sgroup;
-                ru.subscript.appendString(name, true);
                 return self.addObject(new IndigoRepeatingUnit(mol, idx));
             }
             else if (sgroup.sgroup_type == SGroup::SG_TYPE_MUL)
@@ -1698,8 +1696,9 @@ CEXPORT int indigoSetSGroupName(int sgroup, const char* sgname)
 {
     INDIGO_BEGIN
     {
-        Superatom& sup = IndigoSuperatom::cast(self.getObject(sgroup)).get();
-        sup.subscript.readString(sgname, true);
+        IndigoObject& obj = self.getObject(sgroup);
+        SGroup& sg = IndigoSGroup::cast(obj).get();
+        sg.subscript.readString(sgname, true);
 
         return 1;
     }
@@ -1710,10 +1709,11 @@ CEXPORT const char* indigoGetSGroupName(int sgroup)
 {
     INDIGO_BEGIN
     {
-        Superatom& sup = IndigoSuperatom::cast(self.getObject(sgroup)).get();
-        if (sup.subscript.size() < 1)
+        IndigoObject& obj = self.getObject(sgroup);
+        SGroup& sg = IndigoSGroup::cast(obj).get();
+        if (sg.subscript.size() < 1)
             return "";
-        return sup.subscript.ptr();
+        return sg.subscript.ptr();
     }
     INDIGO_END(0);
 }
