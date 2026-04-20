@@ -838,9 +838,24 @@ void QueryMolecule::writeSmartsAtom(Output& output, Atom* atom, int aam, int chi
         _getAtomChiralityDescription(atom, output);
         break;
     }
-    case ATOM_RSITE:
-        output.printf("*:%d", atom->value_min);
+    case ATOM_RSITE: {
+        // value_min encodes the set of allowed R-group numbers as a bitmask:
+        // bit (N-1) is set if R-group N is permitted. Scan all bits to find
+        // the lowest-numbered R-group and emit it in SMARTS notation (*:N).
+        static const int RSITE_BITMASK_WIDTH = 32; // one bit per R-group, max 32 R-groups
+        int bits = atom->value_min;
+        int min_rgroup = 0;
+        for (int bit_idx = 0; bit_idx < RSITE_BITMASK_WIDTH; bit_idx++)
+        {
+            if (bits & (1 << bit_idx))
+            {
+                min_rgroup = bit_idx + 1;
+                break;
+            }
+        }
+        output.printf("*:%d", min_rgroup);
         break;
+    }
     default: {
         throw Error("Unknown atom attribute %d", atom->type);
         break;
