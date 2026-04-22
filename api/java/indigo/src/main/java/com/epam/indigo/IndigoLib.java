@@ -469,6 +469,8 @@ public interface IndigoLib extends Library {
             String description,
             String data);
 
+    int indigoAddSuperatom(int molecule, int natoms, int[] atoms, String name);
+
     int indigoSetDataSGroupXY(int sgroup, float x, float y, String options);
 
     int indigoCreateSGroup(String type, int mapping, String name);
@@ -482,6 +484,10 @@ public interface IndigoLib extends Library {
     Pointer indigoGetSGroupName(int sgroup);
 
     int indigoGetSGroupNumCrossBonds(int sgroup);
+
+    int indigoCreateCrossBonds(int sgroup);
+
+    int indigoClearSGroupCrossBonds(int sgroup);
 
     int indigoAddSGroupAttachmentPoint(int sgroup, int aidx, int lvidx, String apid);
 

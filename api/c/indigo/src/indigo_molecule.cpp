@@ -1174,6 +1174,43 @@ int _indigoIterateAtoms(Indigo& self, int molecule, int type)
     return self.addObject(new IndigoAtomsIter(&self.getObject(molecule).getBaseMolecule(), type));
 }
 
+struct _IndigoSGroupObject
+{
+    BaseMolecule* mol;
+    SGroup* sg;
+
+    operator bool() const
+    {
+        return mol != nullptr && sg != nullptr;
+    }
+
+    SGroup& get() const
+    {
+        return *sg;
+    }
+};
+
+static _IndigoSGroupObject _getSGroupFromObject(IndigoObject& obj)
+{
+    switch (obj.type)
+    {
+    case IndigoObject::DATA_SGROUP:
+        return {&IndigoDataSGroup::cast(obj).mol, &IndigoDataSGroup::cast(obj).get()};
+    case IndigoObject::SUPERATOM:
+        return {&IndigoSuperatom::cast(obj).mol, &IndigoSuperatom::cast(obj).get()};
+    case IndigoObject::REPEATING_UNIT:
+        return {&IndigoRepeatingUnit::cast(obj).mol, &IndigoRepeatingUnit::cast(obj).get()};
+    case IndigoObject::MULTIPLE_GROUP:
+        return {&IndigoMultipleGroup::cast(obj).mol, &IndigoMultipleGroup::cast(obj).get()};
+    case IndigoObject::GENERIC_SGROUP:
+        return {&IndigoGenericSGroup::cast(obj).mol, &IndigoGenericSGroup::cast(obj).get()};
+    case IndigoObject::SGROUP:
+        return {&IndigoSGroup::cast(obj).mol, &IndigoSGroup::cast(obj).get()};
+    default:
+        return {nullptr, nullptr};
+    }
+}
+
 CEXPORT int indigoIterateAtoms(int molecule)
 {
     INDIGO_BEGIN
@@ -1190,30 +1227,9 @@ CEXPORT int indigoIterateAtoms(int molecule)
             IndigoSubmolecule& sm = (IndigoSubmolecule&)obj;
             return self.addObject(new IndigoSubmoleculeAtomsIter(sm));
         }
-        if (obj.type == IndigoObject::DATA_SGROUP)
+        if (auto sg = _getSGroupFromObject(obj))
         {
-            IndigoDataSGroup& dsg = IndigoDataSGroup::cast(obj);
-            return self.addObject(new IndigoSGroupAtomsIter(dsg.mol, dsg.mol.sgroups.getSGroup(dsg.idx)));
-        }
-        if (obj.type == IndigoObject::SUPERATOM)
-        {
-            IndigoSuperatom& sa = IndigoSuperatom::cast(obj);
-            return self.addObject(new IndigoSGroupAtomsIter(sa.mol, sa.mol.sgroups.getSGroup(sa.idx)));
-        }
-        if (obj.type == IndigoObject::REPEATING_UNIT)
-        {
-            IndigoRepeatingUnit& ru = IndigoRepeatingUnit::cast(obj);
-            return self.addObject(new IndigoSGroupAtomsIter(ru.mol, ru.mol.sgroups.getSGroup(ru.idx)));
-        }
-        if (obj.type == IndigoObject::MULTIPLE_GROUP)
-        {
-            IndigoMultipleGroup& mr = IndigoMultipleGroup::cast(obj);
-            return self.addObject(new IndigoSGroupAtomsIter(mr.mol, mr.mol.sgroups.getSGroup(mr.idx)));
-        }
-        if (obj.type == IndigoObject::GENERIC_SGROUP)
-        {
-            IndigoGenericSGroup& gg = IndigoGenericSGroup::cast(obj);
-            return self.addObject(new IndigoSGroupAtomsIter(gg.mol, gg.mol.sgroups.getSGroup(gg.idx)));
+            return self.addObject(new IndigoSGroupAtomsIter(*sg.mol, sg.get()));
         }
 
         return _indigoIterateAtoms(self, molecule, IndigoAtomsIter::ALL);
@@ -1237,30 +1253,9 @@ CEXPORT int indigoIterateBonds(int molecule)
             IndigoSubmolecule& sm = (IndigoSubmolecule&)obj;
             return self.addObject(new IndigoSubmoleculeBondsIter(sm));
         }
-        if (obj.type == IndigoObject::DATA_SGROUP)
+        if (auto sg = _getSGroupFromObject(obj))
         {
-            IndigoDataSGroup& dsg = IndigoDataSGroup::cast(obj);
-            return self.addObject(new IndigoSGroupBondsIter(dsg.mol, dsg.mol.sgroups.getSGroup(dsg.idx)));
-        }
-        if (obj.type == IndigoObject::SUPERATOM)
-        {
-            IndigoSuperatom& sa = IndigoSuperatom::cast(obj);
-            return self.addObject(new IndigoSGroupBondsIter(sa.mol, sa.mol.sgroups.getSGroup(sa.idx)));
-        }
-        if (obj.type == IndigoObject::REPEATING_UNIT)
-        {
-            IndigoRepeatingUnit& ru = IndigoRepeatingUnit::cast(obj);
-            return self.addObject(new IndigoSGroupBondsIter(ru.mol, ru.mol.sgroups.getSGroup(ru.idx)));
-        }
-        if (obj.type == IndigoObject::MULTIPLE_GROUP)
-        {
-            IndigoMultipleGroup& mr = IndigoMultipleGroup::cast(obj);
-            return self.addObject(new IndigoSGroupBondsIter(mr.mol, mr.mol.sgroups.getSGroup(mr.idx)));
-        }
-        if (obj.type == IndigoObject::GENERIC_SGROUP)
-        {
-            IndigoGenericSGroup& gg = IndigoGenericSGroup::cast(obj);
-            return self.addObject(new IndigoSGroupBondsIter(gg.mol, gg.mol.sgroups.getSGroup(gg.idx)));
+            return self.addObject(new IndigoSGroupBondsIter(*sg.mol, sg.get()));
         }
         BaseMolecule& mol = obj.getBaseMolecule();
         return self.addObject(new IndigoBondsIter(mol));
@@ -1284,16 +1279,10 @@ CEXPORT int indigoCountAtoms(int molecule)
             IndigoSubmolecule& sm = (IndigoSubmolecule&)obj;
             return sm.vertices.size();
         }
-        if (obj.type == IndigoObject::DATA_SGROUP)
-        {
-            IndigoDataSGroup& dsg = IndigoDataSGroup::cast(obj);
-            return dsg.get().atoms.size();
-        }
-        if (obj.type == IndigoObject::SUPERATOM)
-        {
-            IndigoSuperatom& sa = IndigoSuperatom::cast(obj);
-            return sa.get().atoms.size();
-        }
+
+        auto sg = _getSGroupFromObject(obj);
+        if (sg)
+            return sg.get().atoms.size();
 
         BaseMolecule& mol = obj.getBaseMolecule();
 
@@ -1318,16 +1307,10 @@ CEXPORT int indigoCountBonds(int molecule)
             IndigoSubmolecule& sm = (IndigoSubmolecule&)obj;
             return sm.edges.size();
         }
-        if (obj.type == IndigoObject::DATA_SGROUP)
-        {
-            IndigoDataSGroup& dsg = IndigoDataSGroup::cast(obj);
-            return dsg.get().bonds.size();
-        }
-        if (obj.type == IndigoObject::SUPERATOM)
-        {
-            IndigoSuperatom& sa = IndigoSuperatom::cast(obj);
-            return sa.get().bonds.size();
-        }
+
+        auto sg = _getSGroupFromObject(obj);
+        if (sg)
+            return sg.get().bonds.size();
 
         BaseMolecule& mol = obj.getBaseMolecule();
 
