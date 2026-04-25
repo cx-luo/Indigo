@@ -296,8 +296,7 @@ namespace indigo
 
     void indigoSetOptions(const std::map<std::string, std::string>& options)
     {
-        std::set<std::string> to_skip{"smiles",        "smarts", "input-format", "output-content-type", "outputFormat", "monomerLibrary",
-                                      "sequence-type", "upc",    "nac"};
+        std::set<std::string> to_skip{"smiles", "smarts", "output-content-type", "outputFormat", "monomerLibrary", "sequence-type", "upc", "nac"};
         for (const auto& option : options)
         {
             if (to_skip.count(option.first) < 1)

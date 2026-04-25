@@ -71,12 +71,12 @@ def indigo_init(options={}):
         tls.indigo.renderer = IndigoRenderer(tls.indigo)
         for option, value in indigo_api.indigo_defaults.items():
             tls.indigo.setOption(option, value)
+
         for option, value in options.items():
             # TODO: Remove this when Indigo API supports smiles type option
             if option in (
                 "smiles",
                 "smarts",
-                "input-format",
                 "output-content-type",
                 "monomerLibrary",
                 "sequence-type",
@@ -84,6 +84,10 @@ def indigo_init(options={}):
                 "nac",
             ):
                 continue
+
+            if option == "input-format" and value is None:
+                continue
+
             tls.indigo.setOption(option, value)
         return tls.indigo
     except Exception as e:
@@ -348,6 +352,10 @@ def load_moldata(
     input_format = mime_type
     if "input-format" in options:
         input_format = options["input-format"]
+
+    if input_format is not None:
+        indigo.setOption("input-format", input_format)
+
     if input_format in ("smarts", "chemical/x-daylight-smarts"):
         md.struct = indigo.loadSmarts(molstr)
         md.is_query = True
