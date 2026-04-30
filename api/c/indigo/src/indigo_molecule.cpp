@@ -1965,9 +1965,14 @@ CEXPORT int indigoResetCharge(int atom)
         BaseMolecule& mol = ia.mol;
 
         if (mol.isQueryMolecule())
+        {
             mol.asQueryMolecule().getAtom(ia.idx).removeConstraints(QueryMolecule::ATOM_CHARGE);
+            mol.asQueryMolecule().invalidateAtom(ia.idx, BaseMolecule::CHANGED_ALL);
+        }
         else
+        {
             mol.asMolecule().setAtomCharge(ia.idx, 0);
+        }
         return 1;
     }
     INDIGO_END(-1);
@@ -1981,9 +1986,14 @@ CEXPORT int indigoResetExplicitValence(int atom)
         BaseMolecule& mol = ia.mol;
 
         if (mol.isQueryMolecule())
+        {
             mol.asQueryMolecule().getAtom(ia.idx).removeConstraints(QueryMolecule::ATOM_VALENCE);
+            mol.asQueryMolecule().invalidateAtom(ia.idx, BaseMolecule::CHANGED_ALL);
+        }
         else
+        {
             mol.asMolecule().resetExplicitValence(ia.idx);
+        }
         return 1;
     }
     INDIGO_END(-1);
